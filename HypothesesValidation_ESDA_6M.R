@@ -13,14 +13,24 @@
 # # Aggregate
 # Agg <- aggregate(x = obj, by = list(obj$var1, obj$var2, etc), FUN = mean)
 
-View(AdamJanuary2013)
-CopyAdamJan <- AdamJanuary2013
+# Create a list of all charge session datasets
+AdamList <- list(AdamJanuary2013, AdamJune2013, AdamNovember2014, AdamJanuary2015, AdamAugust2015, AdamJanuary2016)
 
 # Hyptheses: In the weekend there is less variation in charge locations than during the week.
-AdamJan.Weekends <- subset(CopyAdamJan, (CopyAdamJan$Weekday == "Saturday" | CopyAdamJan$Weekday == "Sunday")) 
-AdamJan.Weekdays <- subset(CopyAdamJan, (CopyAdamJan$Weekday == "Monday" | CopyAdamJan$Weekday == "Tuesday"| CopyAdamJan$Weekday == "Wednesday" | CopyAdamJan$Weekday == "Thursday"| CopyAdamJan$Weekday == "Friday"))
-Weekends.uniq <- unique(unlist(AdamJan.Weekends$Address))
-Weekdays.uniq <- unique(unlist(AdamJan.Weekdays$Address))
-length(Weekends.uniq) < length(Weekdays.uniq)
+WkEnd <- function(x){
+    Adam <- x
+    Adam.Weekends <- subset(Adam, (Adam$Weekday == "Saturday" | Adam$Weekday == "Sunday")) 
+    Adam.Weekdays <- subset(Adam, (Adam$Weekday == "Monday" | Adam$Weekday == "Tuesday"| Adam$Weekday == "Wednesday" | Adam$Weekday == "Thursday"| Adam$Weekday == "Friday"))
+    Weekends.uniq <- unique(unlist(Adam.Weekends$Address))
+    Weekdays.uniq <- unique(unlist(Adam.Weekdays$Address))
+    WndCount <- length(Weekends.uniq)
+    WkCount <-length(Weekdays.uniq)
+    Difference <- length(Weekends.uniq) < length(Weekdays.uniq)
+    Answer <- c(WndCount,WkCount,Difference)
+    return(Answer)
+}
 
+Hypothesis1 <- lapply(AdamList, WkEnd)
+Hypothesis1
 
+#------
