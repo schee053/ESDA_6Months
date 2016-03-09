@@ -8,7 +8,7 @@
 ### Denk ook aan huisnummertoevoegingen in het adres (kijk naar bronbestand)!!, hoofdlettergevoeligheid en spatie-gevoeligheid
 
 # Set directory
-mainDir <- "M:/My Documents/ESDA_NL_ThesisTool/ESDA_6Months"
+mainDir <- "E:/Raw_ChargeSession_Datasets"
 dataDir <- "Datasets"
 outputDir <- "Output"
 dir.create(file.path(mainDir,dataDir), showWarnings = FALSE)
@@ -23,7 +23,8 @@ if (!require(plyr)) install.packages('plyr')
 if (!require(RCurl)) install.packages('RCurl')
 if (!require(chron)) install.packages('chron')
 if (!require(lubridate)) install.packages('lubridate')
-
+getwd()
+list.files()
 #-------------------------------------------------------------------------------------------  
 # pre-process Charge Point Dataset (latitude/longitude)
 #-------------------------------------------------------------------------------------------
@@ -54,13 +55,13 @@ Stations2015 <- get.stations("https://api.essent.nl/generic/downloadChargingStat
 list.files()
 
 # Split (subset) Nuon files
-NuonSplit <- read.csv("rapportage_verbruiksdata 201301 + 201306.csv", header = T, sep=",")
+NuonSplit <- read.csv("Nuon_01_2013_+_06_2013.csv", header = T, sep=",")
 NuonSplit$Begin_CS <- as.POSIXct(paste(NuonSplit$Start), format="%d-%m-%Y %H:%M", tz = "GMT")
 NuonSplit$End_CS <- as.POSIXct(paste(NuonSplit$Eind), format="%d-%m-%Y %H:%M",  tz = "GMT")
 NuonSplitJan2013 <- subset(NuonSplit, Begin_CS < as.POSIXct("2013-06-01 00:00"))
 NuonSplitJune2013 <- subset(NuonSplit, Begin_CS >= as.POSIXct("2013-06-01 00:00"))
-write.csv(NuonSplitJan2013, file= paste("NuonSplitJan2013", "csv", sep = "."))
-write.csv(NuonSplitJune2013, file= paste("NuonSplitJune2013", "csv", sep = "."))
+write.csv(NuonSplitJan2013, file= paste("Nuon_01_2013", "csv", sep = "."))
+write.csv(NuonSplitJune2013, file= paste("Nuon_06_2013", "csv", sep = "."))
 
 prep_NUON <- function (csv.file, obj.name){
   # Read csv files and create R-objects
@@ -138,19 +139,15 @@ prep_NUON <- function (csv.file, obj.name){
   NuonRaw.Stations <- join(NuonRaw, Stations2015, by="Address", type = "left")
   
   # Remove duplicates in joined file 
-  NuonRaw.Sessions <- NuonRaw.Stations2015[ !duplicated(NuonRaw.Stations2015["Session_ID"]),]
+  NuonRaw.Sessions <- NuonRaw.Stations[ !duplicated(NuonRaw.Stations["Session_ID"]),]
   
   # Remove NA values in Latitude column 
   NuonRaw.Sessions <- NuonRaw.Sessions[!is.na(NuonRaw.Sessions$Latitude),] # Many failed matches (2778!) 
   ### Denk ook aan huisnummertoevoegingen, hoofdlettergevoeligheid en spatie-gevoeligheid
   #View(NuonRaw)
-  
-  #Create pointID
-  NuonRaw.Sessions$pointID <- paste(NuonRaw.Sessions$Longitude, NuonRaw.Sessions$Latitude, sep = "")
-  NuonRaw.Sessions$pointID <- as.character(NuonRaw.Sessions$pointID)
-  
+
   # Remove unnecessary columns
-  keep <- c("Session_ID", "Begin_CS", "End_CS", "kWh_per_min", "ConnectionTime", "timeMin", "kWh_total", "Weekday", "DayHour", "Day", "Month", "Week", "Year", "Street", "HouseNumber", "PostalCode", "Address", "Latitude", "Longitude", "Provider", "YearDay", "pointID")
+  keep <- c("Session_ID", "Begin_CS", "End_CS", "kWh_per_min", "ConnectionTime", "timeMin", "kWh_total", "Weekday", "DayHour", "Day", "Month", "Week", "Year", "Street", "HouseNumber", "PostalCode", "Address", "Latitude", "Longitude", "Provider", "YearDay")
   NuonClean <- NuonRaw.Sessions[keep]
   
   # Write to csv and return object
@@ -159,8 +156,8 @@ prep_NUON <- function (csv.file, obj.name){
 } 
 
 # Run function
-Nuon_January2013 <- prep_NUON("NuonSplitJan2013.csv", "Nuon_January2013")
-Nuon_June2013 <- prep_NUON("NuonSplitJune2013.csv", "Nuon_June2013") 
+Nuon_January2013 <- prep_NUON("Nuon_01_2013.csv", "Nuon_January2013")
+Nuon_June2013 <- prep_NUON("Nuon_06_2013.csv", "Nuon_June2013") 
 
 #-------------------------------------------------------------------------------------------  
 # pre-process Nuon charge session datasets 2014-2016
@@ -257,10 +254,10 @@ prep_NUON2.0 <- function (csv.file, obj.name){
 } 
 
 # Run function
-NuonNovember2014 <- prep_NUON2.0("Nuon_11_2014.csv", "Nuon_November2014")
-NuonJanuary2015 <- prep_NUON2.0("Nuon_01_2015.csv", "Nuon_January2015")
-NuonAugust2015 <- prep_NUON2.0("Nuon_08_2015.csv", "Nuon_August2015")
-NuonJanuary2016 <- prep_NUON2.0("Nuon_01_2016.csv", "Nuon_January2016")
+Nuon_November2014 <- prep_NUON2.0("Nuon_11_2014.csv", "Nuon_November2014")
+Nuon_January2015 <- prep_NUON2.0("Nuon_01_2015.csv", "Nuon_January2015")
+Nuon_August2015 <- prep_NUON2.0("Nuon_08_2015.csv", "Nuon_August2015")
+Nuon_January2016 <- prep_NUON2.0("Nuon_01_2016.csv", "Nuon_January2016")
 
 #-------------------------------------------------------------------------------------------  
 # pre-process Essent charge session dataset January and June 2013
@@ -349,7 +346,7 @@ prep_ESSENT <- function(csv.file, obj.name){
   
   # Join Charge data with xy-coordinates
   EssentRaw$Address <- paste(EssentRaw$Street, EssentRaw$HouseNumber, EssentRaw$PostalCode, sep=" ")
-  EssentRaw.Stations <- join(EssentRaw, Stations, by="Address", type = "left", match = "all")
+  EssentRaw.Stations <- join(EssentRaw, Stations2015, by="Address", type = "left", match = "all")
   
   # Remove duplicates in joined file 
   EssentRaw.Stations$REMOVE_ID <- paste(EssentRaw.Stations$Session_ID, EssentRaw.Stations$METER_READ_BEGIN, EssentRaw.Stations$Address)
@@ -359,12 +356,8 @@ prep_ESSENT <- function(csv.file, obj.name){
   # Remove NA values in Latitude column 
   EssentRaw.Sessions <- EssentRaw.Sessions[!is.na(EssentRaw.Sessions$Latitude),] 
   
-  #Create pointID
-  EssentRaw.Sessions$pointID <- paste(EssentRaw.Sessions$Longitude, EssentRaw.Sessions$Latitude, sep = "")
-  EssentRaw.Sessions$pointID <- as.character(EssentRaw.Sessions$pointID)
-  
   # Remove unnecessary columns
-  keep <- c("Session_ID", "Begin_CS", "End_CS", "kWh_per_min", "ConnectionTime", "timeMin", "kWh_total", "Weekday", "DayHour", "Day", "Month", "Week", "Year", "Street", "HouseNumber", "PostalCode", "Address", "Latitude", "Longitude", "Provider", "YearDay", "pointID")
+  keep <- c("Session_ID", "Begin_CS", "End_CS", "kWh_per_min", "ConnectionTime", "timeMin", "kWh_total", "Weekday", "DayHour", "Day", "Month", "Week", "Year", "Street", "HouseNumber", "PostalCode", "Address", "Latitude", "Longitude", "Provider", "YearDay")
   EssentClean <- EssentRaw.Sessions[keep]
   
   # Write to csv and return object
@@ -373,8 +366,8 @@ prep_ESSENT <- function(csv.file, obj.name){
 }
 
 # Run function
-Essent_January2013 <- prep_ESSENT("exp_201301-62014.csv", "Essent_January2013")
-Essent_June2013 <- prep_ESSENT("exp_201306-62014.csv", "Essent_June2013")
+Essent_January2013 <- prep_ESSENT("Essent_01_2013.csv", "Essent_January2013")
+Essent_June2013 <- prep_ESSENT("Essent_06_2013.csv", "Essent_June2013")
 
 #-------------------------------------------------------------------------------------------  
 # pre-process Essent charge session dataset November 2014, January 2015, January 2016
@@ -468,14 +461,9 @@ prep_ESSENT2.0 <- function(csv.file, obj.name){
   
   # Remove NA values in Latitude column 
   EssentRaw.Sessions <- EssentRaw.Sessions[!is.na(EssentRaw.Sessions$Latitude),] 
-  
-  #Create pointID
-  EssentRaw.Sessions$pointID <- paste(EssentRaw.Sessions$Longitude, EssentRaw.Sessions$Latitude, sep = "")
-  EssentRaw.Sessions$pointID <- as.character(EssentRaw.Sessions$pointID)
-  
+
   # Remove unnecessary columns
-  
-  keep <- c("Session_ID", "Begin_CS", "End_CS", "kWh_per_min", "ConnectionTime", "timeMin", "kWh_total", "Weekday", "DayHour", "Day", "Month", "Week", "Year", "Street", "HouseNumber", "PostalCode", "Address", "Latitude", "Longitude", "Provider", "YearDay", "pointID")
+  keep <- c("Session_ID", "Begin_CS", "End_CS", "kWh_per_min", "ConnectionTime", "timeMin", "kWh_total", "Weekday", "DayHour", "Day", "Month", "Week", "Year", "YearDay", "Address", "Latitude", "Longitude", "Provider")
   EssentClean <- EssentRaw.Sessions[keep]
   
   # Write to csv and return object
@@ -484,9 +472,9 @@ prep_ESSENT2.0 <- function(csv.file, obj.name){
 }
 
 # Run function
-EssentNovember2014 <- prep_ESSENT2.0("Essent_11_2014.csv", "Essent_November2014")
-EssentJanuary2015 <- prep_ESSENT2.0("Essent_01_2015.csv", "Essent_January2015")
-EssentJanuary2016 <- prep_ESSENT2.0("Essent_01_2016.csv", "Essent_January2016")
+Essent_November2014 <- prep_ESSENT2.0("Essent_11_2014.csv", "Essent_November2014")
+Essent_January2015 <- prep_ESSENT2.0("Essent_01_2015.csv", "Essent_January2015")
+Essent_January2016 <- prep_ESSENT2.0("Essent_01_2016.csv", "Essent_January2016")
 #-------------------------------------------------------------------------------------------  
 # pre-process Essent charge session dataset August 2015 
 #-------------------------------------------------------------------------------------------
@@ -581,13 +569,8 @@ prep_ESSENT3.0 <- function(csv.file, obj.name){
   # Remove NA values in Latitude column 
   EssentRaw.Sessions <- EssentRaw.Sessions[!is.na(EssentRaw.Sessions$Latitude),] 
   
-  #Create pointID
-  EssentRaw.Sessions$pointID <- paste(EssentRaw.Sessions$Longitude, EssentRaw.Sessions$Latitude, sep = "")
-  EssentRaw.Sessions$pointID <- as.character(EssentRaw.Sessions$pointID)
-  
   # Remove unnecessary columns
-  
-  keep <- c("Session_ID", "Begin_CS", "End_CS", "kWh_per_min", "ConnectionTime", "timeMin", "kWh_total", "Weekday", "DayHour", "Day", "Month", "Week", "Year", "Street", "HouseNumber", "PostalCode", "Address", "Latitude", "Longitude", "Provider", "YearDay", "pointID")
+  keep <- c("Session_ID", "Begin_CS", "End_CS", "kWh_per_min", "ConnectionTime", "timeMin", "kWh_total", "Weekday", "DayHour", "Day", "Month", "Week", "Year", "YearDay", "Address", "Latitude", "Longitude", "Provider")
   EssentClean <- EssentRaw.Sessions[keep]
   
   # Write to csv and return object
@@ -596,7 +579,7 @@ prep_ESSENT3.0 <- function(csv.file, obj.name){
 }
 
 # Run function
-EssentAugust2015 <- prep_ESSENT3.0("Essent_08_2015.csv", "Essent_August2015")
+Essent_August2015 <- prep_ESSENT3.0("Essent_08_2015.csv", "Essent_August2015")
 
 
 #-------------------------------------------------------------------------------------------  
@@ -604,8 +587,21 @@ EssentAugust2015 <- prep_ESSENT3.0("Essent_08_2015.csv", "Essent_August2015")
 #-------------------------------------------------------------------------------------------
 AdamJanuary2013 <- rbind(Nuon_January2013, Essent_January2013)
 write.csv(AdamJanuary2013, file = "AdamJanuary2013.csv")
+
 AdamJune2013 <- rbind(Nuon_June2013, Essent_June2013)
 write.csv(AdamJune2013, file = "AdamJune2013.csv")
+
+AdamNovember2014 <- rbind(Nuon_November2014, Essent_November2014)
+write.csv(AdamNovember2014, file = "AdamNovember2014.csv")
+
+AdamJanuary2015 <- rbind(Nuon_January2015, Essent_January2015)
+write.csv(AdamJanuary2015, file = "AdamJanuary2015.csv")
+
+AdamAugust2015 <- rbind(Nuon_August2015, Essent_August2015)
+write.csv(AdamAugust2015, file = "AdamAugust2015.csv")
+
+AdamJanuary2016 <- rbind(Nuon_January2016, Essent_January2016)
+write.csv(AdamJanuary2016, file = "AdamJanuary2016.csv")
 
 #-------------------------------------------------------------------------------------------  
 # Subset data per week
@@ -614,35 +610,35 @@ write.csv(AdamJune2013, file = "AdamJune2013.csv")
 # Make a list of objects. Output is the list! 
 # List will become input for plotKML function. For each item in the list, for length of the list, run the function.
 
-splitWeek <- function (obj){
-  obj$weekID <- paste(obj$Week, obj$Year, sep = ".")
-  uniq <- unique(unlist(obj$weekID))
-  x <- list()
-  for (i in 1:length(uniq)) {
-    name <- paste("Week",uniq[i],sep=".")
-    y <- assign(name, subset(obj, weekID == uniq[i]))
-    x[[name]] <- y
-  }
-  return (x)
-}
-
-JanuaryWeekList <- splitWeek(AdamJanuary2013)
-JuneWeekList <- splitWeek(AdamJune2013)
-length(JuneWeekList)
-
-# #To create each as seperate objects (not as a list):
-AdamJune2013$WeekNr <- strftime(AdamJune2013$Begin_CS, format = "%W")
-AdamJune2013$Year <- strftime(AdamJune2013$Begin_CS, format = "%Y")
-AdamJune2013$weekID <- paste(AdamJune2013$WeekNr, AdamJune2013$Year, sep = ".")
-uniq <- unique(unlist(AdamJune2013$weekID))
-for (i in 1:length(uniq)) {
-  assign(paste("Week",uniq[i],sep="."), subset(AdamJune2013, weekID == uniq[i]))
-}
-
-AdamJanuary2013$WeekNr <- strftime(AdamJanuary2013$Begin_CS, format = "%W")
-AdamJanuary2013$Year <- strftime(AdamJanuary2013$Begin_CS, format = "%Y")
-AdamJanuary2013$weekID <- paste(AdamJanuary2013$WeekNr, AdamJanuary2013$Year, sep = ".")
-uniq <- unique(unlist(AdamJanuary2013$weekID))
-for (i in 1:length(uniq)) {
-  assign(paste("Week",uniq[i],sep="."), subset(AdamJanuary2013, weekID == uniq[i]))
-}
+# splitWeek <- function (obj){
+#   obj$weekID <- paste(obj$Week, obj$Year, sep = ".")
+#   uniq <- unique(unlist(obj$weekID))
+#   x <- list()
+#   for (i in 1:length(uniq)) {
+#     name <- paste("Week",uniq[i],sep=".")
+#     y <- assign(name, subset(obj, weekID == uniq[i]))
+#     x[[name]] <- y
+#   }
+#   return (x)
+# }
+# 
+# JanuaryWeekList <- splitWeek(AdamJanuary2013)
+# JuneWeekList <- splitWeek(AdamJune2013)
+# length(JuneWeekList)
+# 
+# # #To create each as seperate objects (not as a list):
+# AdamJune2013$WeekNr <- strftime(AdamJune2013$Begin_CS, format = "%W")
+# AdamJune2013$Year <- strftime(AdamJune2013$Begin_CS, format = "%Y")
+# AdamJune2013$weekID <- paste(AdamJune2013$WeekNr, AdamJune2013$Year, sep = ".")
+# uniq <- unique(unlist(AdamJune2013$weekID))
+# for (i in 1:length(uniq)) {
+#   assign(paste("Week",uniq[i],sep="."), subset(AdamJune2013, weekID == uniq[i]))
+# }
+# 
+# AdamJanuary2013$WeekNr <- strftime(AdamJanuary2013$Begin_CS, format = "%W")
+# AdamJanuary2013$Year <- strftime(AdamJanuary2013$Begin_CS, format = "%Y")
+# AdamJanuary2013$weekID <- paste(AdamJanuary2013$WeekNr, AdamJanuary2013$Year, sep = ".")
+# uniq <- unique(unlist(AdamJanuary2013$weekID))
+# for (i in 1:length(uniq)) {
+#   assign(paste("Week",uniq[i],sep="."), subset(AdamJanuary2013, weekID == uniq[i]))
+# }
