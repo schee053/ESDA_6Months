@@ -1,7 +1,51 @@
 ###
 ### VIND NIEUWE API LINK MET LAADSTATIONS 2016!!!
-###
 
+StationAgg <- function(obj){
+  AdamClean <- AdamJanuary2013
+  keep <- c("Latitude", "Longitude", "Address", "Provider")
+  AdamClean <- AdamClean[keep]
+  # Aggregate sessions to unique charge points
+  AdamClean$Prov_nr <- gsub("Nuon", "01", AdamClean$Provider, fixed = TRUE)
+  View(AdamClean)
+  AdamClean$Prov_nr <- gsub("Essent", "02", AdamClean$Prov_nr, fixed = TRUE)
+  AdamClean$Prov_nr <- as.numeric(AdamClean$Prov_nr)
+  AdamAgg <- aggregate(AdamClean, by = list(AdamClean$Latitude, AdamClean$Longitude, AdamClean$Address), FUN = mean)
+  View(AdamAgg)
+  keep <- c("Group.1", "Group.2", "Group.3", "Prov_nr")
+  AdamAgg <- AdamAgg[keep]
+  names(AdamAgg)[names(AdamAgg)=="Group.1"] <- "Latitude"
+  names(AdamAgg)[names(AdamAgg)=="Group.2"] <- "Longitude"
+  names(AdamAgg)[names(AdamAgg)=="Group.3"] <- "Address"
+  names(AdamAgg)[names(AdamAgg)=="Prov_nr"] <- "Provider" 
+  AdamAgg$Provider <- as.character(AdamAgg$Provider)
+  AdamAgg$Provider <- gsub("1", "Nuon", AdamAgg$Provider, fixed = TRUE)
+  AdamAgg$Provider <- gsub("2", "Essent", AdamAgg$Provider, fixed = TRUE)
+  return(AdamAgg)
+}
+
+Stations2013 <- StationAgg(AdamJanuary2013)
+
+
+get.stations <- function(webaddress, file.name){
+  # Download Charge point dataset
+  download.file(webaddress,destfile=file.name,method="libcurl")
+  Stations <- read.csv(file.name, header = T, sep=";")
+  # Remove white space from PostalCode
+  Stations$PostalCode <- gsub(" ", "", Stations$PostalCode, fixed = T)
+  # Create address for join opperation
+  Stations$Address <- paste(Stations$Street, Stations$HouseNumber, Stations$PostalCode, sep=" ")
+  # Remove double entries based on unique values in column "CPExternalID" 
+  Stations <- Stations[ !duplicated(Stations["CPExternalID"]),]
+  # Write to csv 
+  write.csv(Stations, file= paste(file.name, "csv", sep = "."))
+  return (Stations)
+} 
+
+Stations2016 <- get.stations("https://api.essent.nl/partner/a2a/cs/getStaticChargingStations?wsdl", "ChargeStations")
+download.file("",destfile="ChargeStations.csv",method="libcurl")
+Stations <- read.csv("ChargeStations.csv", header = T, sep=";")
+View(Stations)
 # Mannualy put charge data into workspace directory and save as CSV-file!!
 list.files()
 
@@ -13,6 +57,7 @@ prep_ESSENT3.0 <- function(csv.file, obj.name){
   # Extract the sum of sessions
   EssentRaw$Merkmal.Summenzeile <- as.character(EssentRaw$Merkmal.Summenzeile)
   EssentRaw <- subset(EssentRaw, Merkmal.Summenzeile == "X")
+  View(EssentRaw)
   
   # Set date and time 
   EssentRaw$Begin_DA <- as.character(EssentRaw$Verbindung.Datum.Beginn)

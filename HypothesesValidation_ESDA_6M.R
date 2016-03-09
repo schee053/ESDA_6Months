@@ -12,6 +12,7 @@
 # rbind(objA, objB)
 # # Aggregate
 # Agg <- aggregate(x = obj, by = list(obj$var1, obj$var2, etc), FUN = mean)
+View(AdamJanuary2013)
 
 # Create a list of all charge session datasets
 AdamList <- list(AdamJanuary2013, AdamJune2013, AdamNovember2014, AdamJanuary2015, AdamAugust2015, AdamJanuary2016)
@@ -34,3 +35,36 @@ Hypothesis1 <- lapply(AdamList, WkEnd)
 Hypothesis1
 
 #------
+# Explore the general values of each dataset.
+Mode <- function(x) {
+  ux <- unique(x)
+  ux[which.max(tabulate(match(x, ux)))]
+}
+
+DatExpl <- function(x){
+  Adam <- x
+  Sessions <- nrow(Adam)
+  Stations <- length(unique(unlist(Adam$Address)))
+  ConTime <- (mean(Adam$timeMin))/60
+  kWh <- mean(Adam$kWh_total)
+  Efficiency <- mean(Adam$kWh_per_min)
+  Weekday <- Mode(AdamJanuary2013$Weekday)
+  Address <- Mode(AdamJanuary2013$Address)
+  Answers <- c(Sessions, Stations, ConTime, kWh, Efficiency, Weekday, Address)
+  return(Answers)
+}
+
+Exploration <- lapply(AdamList, DatExpl)
+Exploration
+
+# Observation: At Julianaplein, many different vehicles charge on Tuesdays. (What is there on Tuesdays?)
+JulianaPlein <- function(x){
+  Plein <- subset(x, x$Address == "Julianaplein 1A 1097DN")
+  Day <- Mode(Plein$Weekday)
+  return(Day)
+}
+
+Plein <- lapply(AdamList, JulianaPlein)
+Plein
+
+View(AdamJanuary2016)

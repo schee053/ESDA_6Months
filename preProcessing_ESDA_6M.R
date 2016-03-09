@@ -47,6 +47,7 @@ get.stations <- function(webaddress, file.name){
 } 
 
 Stations2015 <- get.stations("https://api.essent.nl/generic/downloadChargingStations?latitude_low=52.30567123031878&longtitude_low=4.756801078125022&latitude_high=52.43772606594848&longtitude_high=5.086390921875022&format=CSV", "ChargeStations")
+
 #-------------------------------------------------------------------------------------------  
 # pre-process Nuon charge session datasets 2013
 #-------------------------------------------------------------------------------------------
@@ -160,6 +161,150 @@ Nuon_January2013 <- prep_NUON("Nuon_01_2013.csv", "Nuon_January2013")
 Nuon_June2013 <- prep_NUON("Nuon_06_2013.csv", "Nuon_June2013") 
 
 #-------------------------------------------------------------------------------------------  
+# pre-process Essent charge session dataset January and June 2013
+#-------------------------------------------------------------------------------------------
+# Mannualy put charge data into workspace directory and save as CSV-file!!
+list.files()
+
+prep_ESSENT <- function(csv.file, obj.name){
+  # Read CSV file
+  EssentRaw <- read.csv(csv.file,  header = T, sep=",")
+  
+  # Extract the sum of sessions
+  EssentRaw$IS_SUM_RECORD <- as.character(EssentRaw$IS_SUM_RECORD)
+  EssentRaw <- subset(EssentRaw, IS_SUM_RECORD == "X")
+  
+  # Set date and time 
+  EssentRaw$Begin_DA <- as.character(EssentRaw$BEGIN_LOAD_DATE)
+  EssentRaw$Begin_TI <- as.character(EssentRaw$BEGIN_LOAD_TIME)
+  EssentRaw$End_DA <- as.character(EssentRaw$END_LOAD_DATE)
+  EssentRaw$End_TI <- as.character(EssentRaw$END_LOAD_TIME)
+  EssentRaw$Begin_CS <- as.POSIXct(paste(EssentRaw$Begin_DA, EssentRaw$Begin_TI), format="%d.%m.%Y %H:%M:%S", tz = "GMT")
+  EssentRaw$End_CS <- as.POSIXct(paste(EssentRaw$End_DA, EssentRaw$End_TI), format="%d.%m.%Y %H:%M:%S",  tz = "GMT")
+  
+  # Remove sessions from December 2012
+  EssentRaw <- subset(EssentRaw, Begin_CS >= as.POSIXct("2013-01-01 00:00"))
+  
+  # Add weekdays column
+  EssentRaw$Weekday <- weekdays(as.Date(EssentRaw$Begin_CS, "%Y-%m-%d %H:%M:%S", tz = "GMT"))
+  EssentRaw$DayHour <- strftime(EssentRaw$Begin_CS, format = "%H")
+  EssentRaw$Day <- strftime(EssentRaw$Begin_CS, format = "%d")
+  EssentRaw$Week <- strftime(EssentRaw$Begin_CS, format = "%W")
+  EssentRaw$Month <- strftime(EssentRaw$Begin_CS, format = "%m")
+  EssentRaw$Year <- strftime(EssentRaw$Begin_CS, format = "%Y")
+  EssentRaw$YearDay <- yday(EssentRaw$Begin_CS)
+  
+  # Convert energy from factor to numeric
+  EssentRaw$ENERGIE <- as.character(EssentRaw$ENERGIE)
+  EssentRaw$ENERGIE <- gsub(",", "", EssentRaw$ENERGIE, fixed = TRUE)
+  EssentRaw$ENERGIE <- as.numeric(EssentRaw$ENERGIE)
+  EssentRaw$ENERGIE <- (EssentRaw$ENERGIE / 10000)
+  
+  # Rename columns: 
+  names(EssentRaw)[names(EssentRaw)=="STREET"] <- "Street"
+  names(EssentRaw)[names(EssentRaw)=="HOUSE_NUM1"] <- "HouseNumber"
+  names(EssentRaw)[names(EssentRaw)=="POST_CODE1"] <- "PostalCode"
+  names(EssentRaw)[names(EssentRaw)=="CHARGE_DURATION"] <- "ConnectionTime"
+  names(EssentRaw)[names(EssentRaw)=="ENERGIE"] <- "kWh_total"
+  names(EssentRaw)[names(EssentRaw)=="UNIQUE_ID"] <- "Session_ID"
+  
+  # Remove white space from PostalCode
+  EssentRaw$PostalCode <- as.character(EssentRaw$PostalCode)
+  EssentRaw$PostalCode <- gsub(" ", "", EssentRaw$PostalCode, fixed = T)
+  
+  # Add ConnectionTime in seconds
+  EssentRaw$ConnectionTime <- as.character.Date(EssentRaw$ConnectionTime, format= "%H:%M:%S", tz="GMT")
+  
+  toSeconds <- function(x){
+    if (!is.character(x)) stop("x must be a character string of the form H:M:S")
+    if (length(x)<=0)return(x)
+    
+    unlist(
+      lapply(x,
+             function(i){
+               i <- as.numeric(strsplit(i,':',fixed=TRUE)[[1]])
+               if (length(i) == 3) 
+                 i[1]*3600 + i[2]*60 + i[3]
+               else if (length(i) == 2) 
+                 i[1]*60 + i[2]
+               else if (length(i) == 1) 
+                 i[1]
+             }  
+      )  
+    )  
+  } 
+  
+  EssentRaw$timeSec <- toSeconds(EssentRaw$ConnectionTime)
+  EssentRaw$timeMin <- (EssentRaw$timeSec/60)
+  
+  # Remove sessions of 0 seconds (failed sessions)
+  EssentRaw <- subset(EssentRaw, timeSec >= 60)
+  
+  # Calculate kWh per minute
+  EssentRaw$kWh_per_min <- ((EssentRaw$kWh_total/EssentRaw$timeSec)*60) 
+  EssentRaw$kWh_per_min <- round(EssentRaw$kWh_per_min,digits=3)
+  EssentRaw$kWh_total <- round(EssentRaw$kWh_total,digits=2)
+  
+  # Join Charge data with xy-coordinates
+  EssentRaw$Address <- paste(EssentRaw$Street, EssentRaw$HouseNumber, EssentRaw$PostalCode, sep=" ")
+  EssentRaw.Stations <- join(EssentRaw, Stations2015, by="Address", type = "left", match = "all")
+  
+  # Remove duplicates in joined file 
+  EssentRaw.Stations$REMOVE_ID <- paste(EssentRaw.Stations$Session_ID, EssentRaw.Stations$METER_READ_BEGIN, EssentRaw.Stations$Address)
+  EssentRaw.Sessions <- EssentRaw.Stations[ !duplicated(EssentRaw.Stations["REMOVE_ID"]),]
+  # Not the right combination of joins! --> find out where the duplicates come from! 
+  
+  # Remove NA values in Latitude column 
+  EssentRaw.Sessions <- EssentRaw.Sessions[!is.na(EssentRaw.Sessions$Latitude),] 
+  
+  # Remove unnecessary columns
+  keep <- c("Session_ID", "Begin_CS", "End_CS", "kWh_per_min", "ConnectionTime", "timeMin", "kWh_total", "Weekday", "DayHour", "Day", "Month", "Week", "Year", "Street", "HouseNumber", "PostalCode", "Address", "Latitude", "Longitude", "Provider", "YearDay")
+  EssentClean <- EssentRaw.Sessions[keep]
+  
+  # Write to csv and return object
+  write.csv(EssentClean, file = paste(obj.name, "csv", sep =".")) 
+  return (EssentClean)
+}
+
+# Run function
+Essent_January2013 <- prep_ESSENT("Essent_01_2013.csv", "Essent_January2013")
+Essent_June2013 <- prep_ESSENT("Essent_06_2013.csv", "Essent_June2013")
+
+#-------------------------------------------------------------------------------------------  
+# Merge providers per month
+#-------------------------------------------------------------------------------------------
+AdamJanuary2013 <- rbind(Nuon_January2013, Essent_January2013)
+write.csv(AdamJanuary2013, file = "AdamJanuary2013.csv")
+
+#------------------------------------------------------------------------------------------- 
+# Aggregate the sessions to unique charge stations
+#-------------------------------------------------------------------------------------------
+StationAgg <- function(obj){
+  AdamClean <- obj
+  keep <- c("Latitude", "Longitude", "Address", "Provider")
+  AdamClean <- AdamClean[keep]
+  # Aggregate sessions to unique charge points
+  AdamClean$Prov_nr <- gsub("Nuon", "01", AdamClean$Provider, fixed = TRUE)
+  AdamClean$Prov_nr <- gsub("Essent", "02", AdamClean$Prov_nr, fixed = TRUE)
+  AdamClean$Prov_nr <- as.numeric(AdamClean$Prov_nr)
+  AdamAgg <- aggregate(x = AdamClean, by = list(AdamClean$Latitude, AdamClean$Longitude, AdamClean$Address), FUN = mean)
+  keep <- c("Group.1", "Group.2", "Group.3", "Prov_nr")
+  AdamAgg <- AdamAgg[keep]
+  names(AdamAgg)[names(AdamAgg)=="Group.1"] <- "Latitude"
+  names(AdamAgg)[names(AdamAgg)=="Group.2"] <- "Longitude"
+  names(AdamAgg)[names(AdamAgg)=="Group.3"] <- "Address"
+  names(AdamAgg)[names(AdamAgg)=="Prov_nr"] <- "Provider" 
+  AdamAgg$Provider <- as.character(AdamAgg$Provider)
+  AdamAgg$Provider <- gsub("1", "Nuon", AdamAgg$Provider, fixed = TRUE)
+  AdamAgg$Provider <- gsub("2", "Essent", AdamAgg$Provider, fixed = TRUE)
+  return(AdamAgg)
+}
+
+Stations2013 <- StationAgg(AdamJanuary2013)
+# To do the analyses only for the stations existing in January 2013, enable this line of code:
+## Stations2015 <- Stations2013
+###
+#-------------------------------------------------------------------------------------------  
 # pre-process Nuon charge session datasets 2014-2016
 #-------------------------------------------------------------------------------------------
 # Mannualy put charge data into workspace directory and save as CSV-file!!
@@ -258,116 +403,6 @@ Nuon_November2014 <- prep_NUON2.0("Nuon_11_2014.csv", "Nuon_November2014")
 Nuon_January2015 <- prep_NUON2.0("Nuon_01_2015.csv", "Nuon_January2015")
 Nuon_August2015 <- prep_NUON2.0("Nuon_08_2015.csv", "Nuon_August2015")
 Nuon_January2016 <- prep_NUON2.0("Nuon_01_2016.csv", "Nuon_January2016")
-
-#-------------------------------------------------------------------------------------------  
-# pre-process Essent charge session dataset January and June 2013
-#-------------------------------------------------------------------------------------------
-# Mannualy put charge data into workspace directory and save as CSV-file!!
-list.files()
-
-prep_ESSENT <- function(csv.file, obj.name){
-  # Read CSV file
-  EssentRaw <- read.csv(csv.file,  header = T, sep=",")
-  
-  # Extract the sum of sessions
-  EssentRaw$IS_SUM_RECORD <- as.character(EssentRaw$IS_SUM_RECORD)
-  EssentRaw <- subset(EssentRaw, IS_SUM_RECORD == "X")
-  
-  # Set date and time 
-  EssentRaw$Begin_DA <- as.character(EssentRaw$BEGIN_LOAD_DATE)
-  EssentRaw$Begin_TI <- as.character(EssentRaw$BEGIN_LOAD_TIME)
-  EssentRaw$End_DA <- as.character(EssentRaw$END_LOAD_DATE)
-  EssentRaw$End_TI <- as.character(EssentRaw$END_LOAD_TIME)
-  EssentRaw$Begin_CS <- as.POSIXct(paste(EssentRaw$Begin_DA, EssentRaw$Begin_TI), format="%d.%m.%Y %H:%M:%S", tz = "GMT")
-  EssentRaw$End_CS <- as.POSIXct(paste(EssentRaw$End_DA, EssentRaw$End_TI), format="%d.%m.%Y %H:%M:%S",  tz = "GMT")
-  
-  # Remove sessions from December 2012
-  EssentRaw <- subset(EssentRaw, Begin_CS >= as.POSIXct("2013-01-01 00:00"))
-  
-  # Add weekdays column
-  EssentRaw$Weekday <- weekdays(as.Date(EssentRaw$Begin_CS, "%Y-%m-%d %H:%M:%S", tz = "GMT"))
-  EssentRaw$DayHour <- strftime(EssentRaw$Begin_CS, format = "%H")
-  EssentRaw$Day <- strftime(EssentRaw$Begin_CS, format = "%d")
-  EssentRaw$Week <- strftime(EssentRaw$Begin_CS, format = "%W")
-  EssentRaw$Month <- strftime(EssentRaw$Begin_CS, format = "%m")
-  EssentRaw$Year <- strftime(EssentRaw$Begin_CS, format = "%Y")
-  EssentRaw$YearDay <- yday(EssentRaw$Begin_CS)
-
-  # Convert energy from factor to numeric
-  EssentRaw$ENERGIE <- as.character(EssentRaw$ENERGIE)
-  EssentRaw$ENERGIE <- gsub(",", "", EssentRaw$ENERGIE, fixed = TRUE)
-  EssentRaw$ENERGIE <- as.numeric(EssentRaw$ENERGIE)
-  EssentRaw$ENERGIE <- (EssentRaw$ENERGIE / 10000)
-  
-  # Rename columns: 
-  names(EssentRaw)[names(EssentRaw)=="STREET"] <- "Street"
-  names(EssentRaw)[names(EssentRaw)=="HOUSE_NUM1"] <- "HouseNumber"
-  names(EssentRaw)[names(EssentRaw)=="POST_CODE1"] <- "PostalCode"
-  names(EssentRaw)[names(EssentRaw)=="CHARGE_DURATION"] <- "ConnectionTime"
-  names(EssentRaw)[names(EssentRaw)=="ENERGIE"] <- "kWh_total"
-  names(EssentRaw)[names(EssentRaw)=="UNIQUE_ID"] <- "Session_ID"
-  
-  # Remove white space from PostalCode
-  EssentRaw$PostalCode <- as.character(EssentRaw$PostalCode)
-  EssentRaw$PostalCode <- gsub(" ", "", EssentRaw$PostalCode, fixed = T)
-  
-  # Add ConnectionTime in seconds
-  EssentRaw$ConnectionTime <- as.character.Date(EssentRaw$ConnectionTime, format= "%H:%M:%S", tz="GMT")
-  
-  toSeconds <- function(x){
-    if (!is.character(x)) stop("x must be a character string of the form H:M:S")
-    if (length(x)<=0)return(x)
-    
-    unlist(
-      lapply(x,
-             function(i){
-               i <- as.numeric(strsplit(i,':',fixed=TRUE)[[1]])
-               if (length(i) == 3) 
-                 i[1]*3600 + i[2]*60 + i[3]
-               else if (length(i) == 2) 
-                 i[1]*60 + i[2]
-               else if (length(i) == 1) 
-                 i[1]
-             }  
-      )  
-    )  
-  } 
-  
-  EssentRaw$timeSec <- toSeconds(EssentRaw$ConnectionTime)
-  EssentRaw$timeMin <- (EssentRaw$timeSec/60)
-  
-  # Remove sessions of 0 seconds (failed sessions)
-  EssentRaw <- subset(EssentRaw, timeSec >= 60)
-  
-  # Calculate kWh per minute
-  EssentRaw$kWh_per_min <- ((EssentRaw$kWh_total/EssentRaw$timeSec)*60) 
-  EssentRaw$kWh_per_min <- round(EssentRaw$kWh_per_min,digits=3)
-  EssentRaw$kWh_total <- round(EssentRaw$kWh_total,digits=2)
-  
-  # Join Charge data with xy-coordinates
-  EssentRaw$Address <- paste(EssentRaw$Street, EssentRaw$HouseNumber, EssentRaw$PostalCode, sep=" ")
-  EssentRaw.Stations <- join(EssentRaw, Stations2015, by="Address", type = "left", match = "all")
-  
-  # Remove duplicates in joined file 
-  EssentRaw.Stations$REMOVE_ID <- paste(EssentRaw.Stations$Session_ID, EssentRaw.Stations$METER_READ_BEGIN, EssentRaw.Stations$Address)
-  EssentRaw.Sessions <- EssentRaw.Stations[ !duplicated(EssentRaw.Stations["REMOVE_ID"]),]
-  # Not the right combination of joins! --> find out where the duplicates come from! 
-  
-  # Remove NA values in Latitude column 
-  EssentRaw.Sessions <- EssentRaw.Sessions[!is.na(EssentRaw.Sessions$Latitude),] 
-  
-  # Remove unnecessary columns
-  keep <- c("Session_ID", "Begin_CS", "End_CS", "kWh_per_min", "ConnectionTime", "timeMin", "kWh_total", "Weekday", "DayHour", "Day", "Month", "Week", "Year", "Street", "HouseNumber", "PostalCode", "Address", "Latitude", "Longitude", "Provider", "YearDay")
-  EssentClean <- EssentRaw.Sessions[keep]
-  
-  # Write to csv and return object
-  write.csv(EssentClean, file = paste(obj.name, "csv", sep =".")) 
-  return (EssentClean)
-}
-
-# Run function
-Essent_January2013 <- prep_ESSENT("Essent_01_2013.csv", "Essent_January2013")
-Essent_June2013 <- prep_ESSENT("Essent_06_2013.csv", "Essent_June2013")
 
 #-------------------------------------------------------------------------------------------  
 # pre-process Essent charge session dataset November 2014, January 2015, January 2016
@@ -580,7 +615,6 @@ prep_ESSENT3.0 <- function(csv.file, obj.name){
 
 # Run function
 Essent_August2015 <- prep_ESSENT3.0("Essent_08_2015.csv", "Essent_August2015")
-
 
 #-------------------------------------------------------------------------------------------  
 # Merge providers per month
