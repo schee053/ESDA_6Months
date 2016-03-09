@@ -377,7 +377,7 @@ Essent_January2013 <- prep_ESSENT("exp_201301-62014.csv", "Essent_January2013")
 Essent_June2013 <- prep_ESSENT("exp_201306-62014.csv", "Essent_June2013")
 
 #-------------------------------------------------------------------------------------------  
-# pre-process Essent charge session dataset November 2014 and January 2015
+# pre-process Essent charge session dataset November 2014, January 2015, January 2016
 #-------------------------------------------------------------------------------------------
 # Mannualy put charge data into workspace directory and save as CSV-file!!
 list.files()
@@ -486,9 +486,9 @@ prep_ESSENT2.0 <- function(csv.file, obj.name){
 # Run function
 EssentNovember2014 <- prep_ESSENT2.0("Essent_11_2014.csv", "Essent_November2014")
 EssentJanuary2015 <- prep_ESSENT2.0("Essent_01_2015.csv", "Essent_January2015")
-
+EssentJanuary2016 <- prep_ESSENT2.0("Essent_01_2016.csv", "Essent_January2016")
 #-------------------------------------------------------------------------------------------  
-# pre-process Essent charge session dataset August 2015 and January 2016
+# pre-process Essent charge session dataset August 2015 
 #-------------------------------------------------------------------------------------------
 
 # Mannualy put charge data into workspace directory and save as CSV-file!!
@@ -597,7 +597,7 @@ prep_ESSENT3.0 <- function(csv.file, obj.name){
 
 # Run function
 EssentAugust2015 <- prep_ESSENT3.0("Essent_08_2015.csv", "Essent_August2015")
-EssentJanuary2016 <- prep_ESSENT3.0("Essent_01_2016.csv", "Essent_January2016")
+
 
 #-------------------------------------------------------------------------------------------  
 # Merge providers per month
