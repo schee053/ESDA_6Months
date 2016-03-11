@@ -72,8 +72,8 @@ JulianaPlein <- function(x){
 Plein <- lapply(AdamList, JulianaPlein)
 Plein
 
-View(AdamJanuary2016)
-
+View(AdamJanuary2015)
+View(Nuon_August2015)
 #-------------------------------------------------------------------------------------------  
 # Subset each weekday
 #-------------------------------------------------------------------------------------------  
@@ -91,4 +91,224 @@ Weekday <- function(x){
   return(Answer)
 }
 
-WeekdayList <- Weekday(AdamList)
+WeekdayList <- lapply(AdamList, Weekday)
+
+#-------------------------------------------------------------------------------------------  
+# Observation: The number of efficient sessions is above average on Saturdays. 
+#------------------------------------------------------------------------------------------- 
+# Conclusion: 
+# In November 2014 indeed the number of sessions with an above average efficiency was largest on Saturdays (in absolute numbers).
+# If you take the mean of the above average sessions on all other days (so all the above average sessions divided by 6), the number of abover average sessions on Saturday is in almost all cases higher.
+# Except for the January 2013, in which the exploration was done...
+
+
+
+Saturdays <- function(x){
+  Adam <- x
+  Adam.Saturdays <- subset(Adam, (Adam$Weekday == "Saturday")) 
+  Adam.OtherDays <- subset(Adam, (Adam$Weekday == "Monday" | Adam$Weekday == "Tuesday"| Adam$Weekday == "Wednesday" | Adam$Weekday == "Thursday"| Adam$Weekday == "Friday"| Adam$Weekday == "Sunday"))
+  # What is the average efficiency of the whole week?
+  Efficiency <- mean(Adam$kWh_per_min)
+  # How many sessions are above average on Saturday an the other days?
+  Sessions.Saturdays <- subset(Adam.Saturdays, Adam.Saturdays$kWh_per_min > Efficiency)
+  Sessions.OtherDays <- subset(Adam.OtherDays, Adam.OtherDays$kWh_per_min > Efficiency)
+  Count.Saturdays <- nrow(Sessions.Saturdays)
+  Count.OtherDays <- nrow(Sessions.OtherDays)/6
+  Check.length <- Count.Saturdays > Count.OtherDays
+  Answers <- c(Count.Saturdays, Count.OtherDays, Check.length)
+  return(Answers)
+}
+
+Saturday.Efficient <- lapply(AdamList, Saturdays)
+Saturday.Efficient
+
+Most.Efficient <- function(x){
+  Adam <- x
+  # Subset days
+  Adam.Monday <- subset(Adam, (Adam$Weekday == "Monday")) 
+  Adam.Tuesday <- subset(Adam, (Adam$Weekday == "Tuesday"))
+  Adam.Wednesday <- subset(Adam, (Adam$Weekday == "Wednesday"))
+  Adam.Thursday <- subset(Adam, (Adam$Weekday == "Thursday"))
+  Adam.Friday <- subset(Adam, (Adam$Weekday == "Friday"))
+  Adam.Saturday <- subset(Adam, (Adam$Weekday == "Saturday"))
+  Adam.Sunday <- subset(Adam, (Adam$Weekday == "Sunday"))
+  # What is the average efficiency of the whole week?
+  Efficiency <- mean(Adam$kWh_per_min)
+  # How many sessions are above average on Saturday an the other days?
+  Sessions.Monday <- subset(Adam.Monday, Adam.Monday$kWh_per_min >= Efficiency)
+  Sessions.Tuesday <- subset(Adam.Tuesday, Adam.Tuesday$kWh_per_min >= Efficiency)
+  Sessions.Wednesday <- subset(Adam.Wednesday, Adam.Wednesday$kWh_per_min >= Efficiency)
+  Sessions.Thursday <- subset(Adam.Thursday, Adam.Thursday$kWh_per_min >= Efficiency)
+  Sessions.Friday <- subset(Adam.Friday, Adam.Friday$kWh_per_min >= Efficiency)
+  Sessions.Saturday <- subset(Adam.Saturday, Adam.Saturday$kWh_per_min >= Efficiency)
+  Sessions.Sunday <- subset(Adam.Sunday, Adam.Sunday$kWh_per_min >= Efficiency)
+  Count.Monday <- nrow(Sessions.Monday)
+  Count.Tuesday <- nrow(Sessions.Tuesday)
+  Count.Wednesday <- nrow(Sessions.Wednesday)
+  Count.Thursday <- nrow(Sessions.Thursday)
+  Count.Friday <- nrow(Sessions.Friday)
+  Count.Saturday <- nrow(Sessions.Saturday)
+  Count.Sunday <- nrow(Sessions.Sunday)
+  Check.length <- Count.Saturday > (Count.Monday|Count.Tuesday|Count.Wednesday|Count.Thursday|Count.Friday|Count.Sunday)
+  Answers <- c(Count.Monday, Count.Tuesday, Count.Wednesday, Count.Thursday, Count.Friday, Count.Saturday, Count.Sunday, Check.length)
+  return(Answers)
+}
+
+Efficient.Saturday <- lapply(AdamList, Most.Efficient)
+Efficient.Saturday  
+
+#-------------------------------------------------------------------------------------------  
+# Observation: Address Ouborg is mainly used on Saturdays. 
+#------------------------------------------------------------------------------------------- 
+Ouborg <- function(x){
+  Adam <- x
+  Adam <- subset(Adam, Adam$Address == "Ouborg 7 1083AE")
+  # Subset days
+  Adam.Monday <- subset(Adam, (Adam$Weekday == "Monday")) 
+  Adam.Tuesday <- subset(Adam, (Adam$Weekday == "Tuesday"))
+  Adam.Wednesday <- subset(Adam, (Adam$Weekday == "Wednesday"))
+  Adam.Thursday <- subset(Adam, (Adam$Weekday == "Thursday"))
+  Adam.Friday <- subset(Adam, (Adam$Weekday == "Friday"))
+  Adam.Saturday <- subset(Adam, (Adam$Weekday == "Saturday"))
+  Adam.Sunday <- subset(Adam, (Adam$Weekday == "Sunday"))
+  # How many sessions are on Saturday an the other days?
+  Count.Monday <- nrow(Adam.Monday)
+  Count.Tuesday <- nrow(Adam.Tuesday)
+  Count.Wednesday <- nrow(Adam.Wednesday)
+  Count.Thursday <- nrow(Adam.Thursday)
+  Count.Friday <- nrow(Adam.Friday)
+  Count.Saturday <- nrow(Adam.Saturday)
+  Count.Sunday <- nrow(Adam.Sunday)
+  Check.length <- Count.Saturday > (Count.Monday|Count.Tuesday|Count.Wednesday|Count.Thursday|Count.Friday|Count.Sunday)
+  Answers <- c(Count.Monday, Count.Tuesday, Count.Wednesday, Count.Thursday, Count.Friday, Count.Saturday, Count.Sunday, Check.length)
+  return(Answers)
+}
+
+Ouborg.check <- lapply(AdamList, Ouborg)
+Ouborg.check
+
+#-------------------------------------------------------------------------------------------  
+# Observation: IJburg-West has very little sessions on Sundays. 
+#------------------------------------------------------------------------------------------- 
+IJburg <- function(x){
+  Adam <- x
+  Adam <- subset(Adam, Adam$Address == "Johan van der Keukenstraat 2 1087BN")
+  # Subset days
+  Adam.Monday <- subset(Adam, (Adam$Weekday == "Monday")) 
+  Adam.Tuesday <- subset(Adam, (Adam$Weekday == "Tuesday"))
+  Adam.Wednesday <- subset(Adam, (Adam$Weekday == "Wednesday"))
+  Adam.Thursday <- subset(Adam, (Adam$Weekday == "Thursday"))
+  Adam.Friday <- subset(Adam, (Adam$Weekday == "Friday"))
+  Adam.Saturday <- subset(Adam, (Adam$Weekday == "Saturday"))
+  Adam.Sunday <- subset(Adam, (Adam$Weekday == "Sunday"))
+  Count.Monday <- nrow(Adam.Monday)
+  Count.Tuesday <- nrow(Adam.Tuesday)
+  Count.Wednesday <- nrow(Adam.Wednesday)
+  Count.Thursday <- nrow(Adam.Thursday)
+  Count.Friday <- nrow(Adam.Friday)
+  Count.Saturday <- nrow(Adam.Saturday)
+  Count.Sunday <- nrow(Adam.Sunday)
+  Answers <- c(Count.Monday, Count.Tuesday, Count.Wednesday, Count.Thursday, Count.Friday, Count.Saturday, Count.Sunday)
+  return(Answers)
+}
+
+IJburg.check <- lapply(AdamList, IJburg)
+IJburg.check
+
+splitWeek <- function (obj){
+  obj$weekID <- paste(obj$Week, obj$Year, sep = ".")
+  uniq <- unique(unlist(obj$weekID))
+  x <- list()
+  for (i in 1:length(uniq)) {
+    name <- paste("Week",uniq[i],sep=".")
+    y <- assign(name, subset(obj, weekID == uniq[i]))
+    x[[name]] <- y
+  }
+  return (x)
+}
+
+JanuaryWeekList <- splitWeek(AdamJanuary2013)
+str(JanuaryWeekList)
+
+IJburgWeekcheck <- lapply(JanuaryWeekList, IJburg)
+IJburgWeekcheck
+
+#-------------------------------------------------------------------------------------------  
+# Observation: In Buikslotermeer large amounts of kWh are charged on Thursdays and Fridays. 
+#------------------------------------------------------------------------------------------- 
+
+Buikslotermeer <- function(x){
+  Adam <- x
+  Adam <- subset(Adam, Adam$Address == "Buikslotermeerplein 2000 1025XL")
+  # Subset days
+  Adam.Monday <- subset(Adam, (Adam$Weekday == "Monday")) 
+  Adam.Tuesday <- subset(Adam, (Adam$Weekday == "Tuesday"))
+  Adam.Wednesday <- subset(Adam, (Adam$Weekday == "Wednesday"))
+  Adam.Thursday <- subset(Adam, (Adam$Weekday == "Thursday"))
+  Adam.Friday <- subset(Adam, (Adam$Weekday == "Friday"))
+  Adam.Saturday <- subset(Adam, (Adam$Weekday == "Saturday"))
+  Adam.Sunday <- subset(Adam, (Adam$Weekday == "Sunday"))
+  # What is the average efficiency of the whole week?
+  kWh_avg <- mean(Adam$kWh_total)
+  # How many sessions are above average on Saturday an the other days?
+  Sessions.Monday <- subset(Adam.Monday, Adam.Monday$kWh_total >= kWh_avg)
+  Sessions.Tuesday <- subset(Adam.Tuesday, Adam.Tuesday$kWh_total >= kWh_avg)
+  Sessions.Wednesday <- subset(Adam.Wednesday, Adam.Wednesday$kWh_total >= kWh_avg)
+  Sessions.Thursday <- subset(Adam.Thursday, Adam.Thursday$kWh_total >= kWh_avg)
+  Sessions.Friday <- subset(Adam.Friday, Adam.Friday$kWh_total >= kWh_avg)
+  Sessions.Saturday <- subset(Adam.Saturday, Adam.Saturday$kWh_total >= kWh_avg)
+  Sessions.Sunday <- subset(Adam.Sunday, Adam.Sunday$kWh_total >= kWh_avg)
+  Count.Monday <- nrow(Sessions.Monday)
+  Count.Tuesday <- nrow(Sessions.Tuesday)
+  Count.Wednesday <- nrow(Sessions.Wednesday)
+  Count.Thursday <- nrow(Sessions.Thursday)
+  Count.Friday <- nrow(Sessions.Friday)
+  Count.Saturday <- nrow(Sessions.Saturday)
+  Count.Sunday <- nrow(Sessions.Sunday)
+  Answers <- c(Count.Monday, Count.Tuesday, Count.Wednesday, Count.Thursday, Count.Friday, Count.Saturday, Count.Sunday)
+  return(Answers)
+}
+
+Buikslotermeer.check <- lapply(AdamList, Buikslotermeer)
+Buikslotermeer.check 
+
+#-------------------------------------------------------------------------------------------  
+# Observation: On weekdays, relatively more sessions occur during the night, than in the weekend. 
+#------------------------------------------------------------------------------------------- 
+# Night = session starts between 22:00 and 05:00 (based on work rithm)
+
+Night01 <- function(x){
+  Adam <- x
+  # Subset the night
+  Adam <- subset(Adam, Adam$DayHour >= 23)
+  Adam <- subset(Adam, Adam$DayHour <= 06)
+  # Subset nights weekday/weekends
+  Adam.Weekends <- subset(Adam, (Adam$Weekday == "Saturday" | Adam$Weekday == "Sunday")) 
+  Adam.Weekdays <- subset(Adam, (Adam$Weekday == "Monday" | Adam$Weekday == "Tuesday"| Adam$Weekday == "Wednesday" | Adam$Weekday == "Thursday"| Adam$Weekday == "Friday"))
+  # Count the average number of sessions per night
+  Count.Weekends <- nrow(Adam.Weekends)/2
+  Count.Weekdays <- nrow(Adam.Weekdays)/6
+  # # Subset nights per day
+  # Adam.Monday <- subset(Adam, (Adam$Weekday == "Monday")) 
+  # Adam.Tuesday <- subset(Adam, (Adam$Weekday == "Tuesday"))
+  # Adam.Wednesday <- subset(Adam, (Adam$Weekday == "Wednesday"))
+  # Adam.Thursday <- subset(Adam, (Adam$Weekday == "Thursday"))
+  # Adam.Friday <- subset(Adam, (Adam$Weekday == "Friday"))
+  # Adam.Saturday <- subset(Adam, (Adam$Weekday == "Saturday"))
+  # Adam.Sunday <- subset(Adam, (Adam$Weekday == "Sunday"))
+  # # Count the night sessions per day
+  # Count.Monday <- nrow(Adam.Monday)
+  # Count.Tuesday <- nrow(Adam.Tuesday)
+  # Count.Wednesday <- nrow(Adam.Wednesday)
+  # Count.Thursday <- nrow(Adam.Thursday)
+  # Count.Friday <- nrow(Adam.Friday)
+  # Count.Saturday <- nrow(Adam.Saturday)
+  # Count.Sunday <- nrow(Adam.Sunday)
+  Check.length <- Count.Weekdays > Count.Weekends
+  Answers <- c(Count.Weekdays, Count.Weekends, Check.length)
+  Check.length <- Count.Weekdays > Count.Weekends
+  return(Answers)
+}
+
+Night01.check <- lapply(AdamList, Night01)
+Night01.check 
