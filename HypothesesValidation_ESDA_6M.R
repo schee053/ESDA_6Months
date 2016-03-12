@@ -188,91 +188,6 @@ Ouborg.check <- lapply(AdamList, Ouborg)
 Ouborg.check
 
 #-------------------------------------------------------------------------------------------  
-# Observation: IJburg-West has very little sessions on Sundays. 
-#------------------------------------------------------------------------------------------- 
-IJburg <- function(x){
-  Adam <- x
-  Adam <- subset(Adam, Adam$Address == "Johan van der Keukenstraat 2 1087BN")
-  # Subset days
-  Adam.Monday <- subset(Adam, (Adam$Weekday == "Monday")) 
-  Adam.Tuesday <- subset(Adam, (Adam$Weekday == "Tuesday"))
-  Adam.Wednesday <- subset(Adam, (Adam$Weekday == "Wednesday"))
-  Adam.Thursday <- subset(Adam, (Adam$Weekday == "Thursday"))
-  Adam.Friday <- subset(Adam, (Adam$Weekday == "Friday"))
-  Adam.Saturday <- subset(Adam, (Adam$Weekday == "Saturday"))
-  Adam.Sunday <- subset(Adam, (Adam$Weekday == "Sunday"))
-  Count.Monday <- nrow(Adam.Monday)
-  Count.Tuesday <- nrow(Adam.Tuesday)
-  Count.Wednesday <- nrow(Adam.Wednesday)
-  Count.Thursday <- nrow(Adam.Thursday)
-  Count.Friday <- nrow(Adam.Friday)
-  Count.Saturday <- nrow(Adam.Saturday)
-  Count.Sunday <- nrow(Adam.Sunday)
-  Answers <- c(Count.Monday, Count.Tuesday, Count.Wednesday, Count.Thursday, Count.Friday, Count.Saturday, Count.Sunday)
-  return(Answers)
-}
-
-IJburg.check <- lapply(AdamList, IJburg)
-IJburg.check
-
-splitWeek <- function (obj){
-  obj$weekID <- paste(obj$Week, obj$Year, sep = ".")
-  uniq <- unique(unlist(obj$weekID))
-  x <- list()
-  for (i in 1:length(uniq)) {
-    name <- paste("Week",uniq[i],sep=".")
-    y <- assign(name, subset(obj, weekID == uniq[i]))
-    x[[name]] <- y
-  }
-  return (x)
-}
-
-JanuaryWeekList <- splitWeek(AdamJanuary2013)
-str(JanuaryWeekList)
-
-IJburgWeekcheck <- lapply(JanuaryWeekList, IJburg)
-IJburgWeekcheck
-
-#-------------------------------------------------------------------------------------------  
-# Observation: In Buikslotermeer large amounts of kWh are charged on Thursdays and Fridays. 
-#------------------------------------------------------------------------------------------- 
-
-Buikslotermeer <- function(x){
-  Adam <- x
-  Adam <- subset(Adam, Adam$Address == "Buikslotermeerplein 2000 1025XL")
-  # Subset days
-  Adam.Monday <- subset(Adam, (Adam$Weekday == "Monday")) 
-  Adam.Tuesday <- subset(Adam, (Adam$Weekday == "Tuesday"))
-  Adam.Wednesday <- subset(Adam, (Adam$Weekday == "Wednesday"))
-  Adam.Thursday <- subset(Adam, (Adam$Weekday == "Thursday"))
-  Adam.Friday <- subset(Adam, (Adam$Weekday == "Friday"))
-  Adam.Saturday <- subset(Adam, (Adam$Weekday == "Saturday"))
-  Adam.Sunday <- subset(Adam, (Adam$Weekday == "Sunday"))
-  # What is the average efficiency of the whole week?
-  kWh_avg <- mean(Adam$kWh_total)
-  # How many sessions are above average on Saturday an the other days?
-  Sessions.Monday <- subset(Adam.Monday, Adam.Monday$kWh_total >= kWh_avg)
-  Sessions.Tuesday <- subset(Adam.Tuesday, Adam.Tuesday$kWh_total >= kWh_avg)
-  Sessions.Wednesday <- subset(Adam.Wednesday, Adam.Wednesday$kWh_total >= kWh_avg)
-  Sessions.Thursday <- subset(Adam.Thursday, Adam.Thursday$kWh_total >= kWh_avg)
-  Sessions.Friday <- subset(Adam.Friday, Adam.Friday$kWh_total >= kWh_avg)
-  Sessions.Saturday <- subset(Adam.Saturday, Adam.Saturday$kWh_total >= kWh_avg)
-  Sessions.Sunday <- subset(Adam.Sunday, Adam.Sunday$kWh_total >= kWh_avg)
-  Count.Monday <- nrow(Sessions.Monday)
-  Count.Tuesday <- nrow(Sessions.Tuesday)
-  Count.Wednesday <- nrow(Sessions.Wednesday)
-  Count.Thursday <- nrow(Sessions.Thursday)
-  Count.Friday <- nrow(Sessions.Friday)
-  Count.Saturday <- nrow(Sessions.Saturday)
-  Count.Sunday <- nrow(Sessions.Sunday)
-  Answers <- c(Count.Monday, Count.Tuesday, Count.Wednesday, Count.Thursday, Count.Friday, Count.Saturday, Count.Sunday)
-  return(Answers)
-}
-
-Buikslotermeer.check <- lapply(AdamList, Buikslotermeer)
-Buikslotermeer.check 
-
-#-------------------------------------------------------------------------------------------  
 # Observation: On weekdays, relatively more sessions occur during the night, than in the weekend. 
 #------------------------------------------------------------------------------------------- 
 # Night = session starts between 22:00 and 05:00 (based on work rithm)
@@ -312,3 +227,197 @@ Night01 <- function(x){
 
 Night01.check <- lapply(AdamList, Night01)
 Night01.check 
+
+#-------------------------------------------------------------------------------------------  
+# Read datafiles with new locations and put them in a list.
+#------------------------------------------------------------------------------------------- 
+# Set directory
+mainDir <- "E:/Raw_ChargeSession_Datasets"
+dataDir <- "Datasets"
+outputDir <- "Output"
+dir.create(file.path(mainDir,dataDir), showWarnings = FALSE)
+dir.create(file.path(mainDir, outputDir), showWarnings = FALSE)
+setwd(file.path(mainDir, outputDir))
+
+read.location <- function(x){
+  csv <- read.csv(x, header = TRUE, sep = ",")
+  return(csv)
+}
+
+January2013_location <- read.location("January2013_complete.csv")
+June2013_location <- read.location("June2013_complete.csv")
+November2014_location <- read.location("November2014_complete.csv")
+January2015_location <- read.location("January2015_complete.csv")
+August2015_location <- read.location("August2015_complete.csv")
+January2016_location <- read.location("January2016_complete.csv")
+
+AdamList2 <- list(January2013_location, June2013_location, November2014_location, January2015_location, August2015_location, January2016_location)
+
+#-------------------------------------------------------------------------------------------  
+# Observation: In Buikslotermeer large amounts of kWh are charged on Thursdays and Fridays. 
+#------------------------------------------------------------------------------------------- 
+
+Buikslotermeer <- function(x){
+  Adam <- x
+  Adam <- subset(Adam, Adam$buurtcom00 == "Buikslotermeer")
+  # Subset days
+  Adam.Monday <- subset(Adam, (Adam$Weekday == "Monday")) 
+  Adam.Tuesday <- subset(Adam, (Adam$Weekday == "Tuesday"))
+  Adam.Wednesday <- subset(Adam, (Adam$Weekday == "Wednesday"))
+  Adam.Thursday <- subset(Adam, (Adam$Weekday == "Thursday"))
+  Adam.Friday <- subset(Adam, (Adam$Weekday == "Friday"))
+  Adam.Saturday <- subset(Adam, (Adam$Weekday == "Saturday"))
+  Adam.Sunday <- subset(Adam, (Adam$Weekday == "Sunday"))
+  # What is the average kWh of the dataset?
+  kWh_avg <- mean(Adam$kWh_total)
+  # How many sessions are above average on Saturday an the other days?
+  Sessions.Monday <- subset(Adam.Monday, Adam.Monday$kWh_total >= kWh_avg)
+  Sessions.Tuesday <- subset(Adam.Tuesday, Adam.Tuesday$kWh_total >= kWh_avg)
+  Sessions.Wednesday <- subset(Adam.Wednesday, Adam.Wednesday$kWh_total >= kWh_avg)
+  Sessions.Thursday <- subset(Adam.Thursday, Adam.Thursday$kWh_total >= kWh_avg)
+  Sessions.Friday <- subset(Adam.Friday, Adam.Friday$kWh_total >= kWh_avg)
+  Sessions.Saturday <- subset(Adam.Saturday, Adam.Saturday$kWh_total >= kWh_avg)
+  Sessions.Sunday <- subset(Adam.Sunday, Adam.Sunday$kWh_total >= kWh_avg)
+  Count.Monday <- nrow(Sessions.Monday)
+  Count.Tuesday <- nrow(Sessions.Tuesday)
+  Count.Wednesday <- nrow(Sessions.Wednesday)
+  Count.Thursday <- nrow(Sessions.Thursday)
+  Count.Friday <- nrow(Sessions.Friday)
+  Count.Saturday <- nrow(Sessions.Saturday)
+  Count.Sunday <- nrow(Sessions.Sunday)
+  Answers <- c(Count.Monday, Count.Tuesday, Count.Wednesday, Count.Thursday, Count.Friday, Count.Saturday, Count.Sunday)
+  return(Answers)
+}
+
+Buikslotermeer.check <- lapply(AdamList2, Buikslotermeer)
+Buikslotermeer.check 
+
+#-------------------------------------------------------------------------------------------  
+# Observation: IJburg-West has very little sessions on Sundays. 
+#------------------------------------------------------------------------------------------- 
+IJburg <- function(x){
+  Adam <- x
+  Adam <- subset(Adam, Adam$buurtcom00 == "IJburg West")
+  # Subset days
+  Adam.Monday <- subset(Adam, (Adam$Weekday == "Monday")) 
+  Adam.Tuesday <- subset(Adam, (Adam$Weekday == "Tuesday"))
+  Adam.Wednesday <- subset(Adam, (Adam$Weekday == "Wednesday"))
+  Adam.Thursday <- subset(Adam, (Adam$Weekday == "Thursday"))
+  Adam.Friday <- subset(Adam, (Adam$Weekday == "Friday"))
+  Adam.Saturday <- subset(Adam, (Adam$Weekday == "Saturday"))
+  Adam.Sunday <- subset(Adam, (Adam$Weekday == "Sunday"))
+  Count.Monday <- nrow(Adam.Monday)
+  Count.Tuesday <- nrow(Adam.Tuesday)
+  Count.Wednesday <- nrow(Adam.Wednesday)
+  Count.Thursday <- nrow(Adam.Thursday)
+  Count.Friday <- nrow(Adam.Friday)
+  Count.Saturday <- nrow(Adam.Saturday)
+  Count.Sunday <- nrow(Adam.Sunday)
+  Answers <- c(Count.Monday, Count.Tuesday, Count.Wednesday, Count.Thursday, Count.Friday, Count.Saturday, Count.Sunday)
+  return(Answers)
+}
+
+IJburg.check <- lapply(AdamList2, IJburg)
+IJburg.check
+
+splitWeek <- function (obj){
+  obj$weekID <- paste(obj$Week, obj$Year, sep = ".")
+  uniq <- unique(unlist(obj$weekID))
+  x <- list()
+  for (i in 1:length(uniq)) {
+    name <- paste("Week",uniq[i],sep=".")
+    y <- assign(name, subset(obj, weekID == uniq[i]))
+    x[[name]] <- y
+  }
+  return (x)
+}
+
+JanuaryWeekList <- splitWeek(January2013_location)
+str(JanuaryWeekList)
+
+IJburgWeekcheck <- lapply(JanuaryWeekList, IJburg)
+IJburgWeekcheck
+
+#-------------------------------------------------------------------------------------------  
+# Observation: The most efficient sessions are in Nieuw-West.
+#------------------------------------------------------------------------------------------- 
+
+NieuwWest <- function(x){
+  Adam <- x
+  # Subset districts
+  Adam.Centrum <- subset(Adam, (Adam$stadsdee00 == "Centrum")) 
+  Adam.Noord <- subset(Adam, (Adam$stadsdee00 == "Noord"))
+  Adam.Oost <- subset(Adam, (Adam$stadsdee00 == "Oost"))
+  Adam.Zuid <- subset(Adam, (Adam$stadsdee00 == "ZUid"))
+  Adam.Zuidoost <- subset(Adam, (Adam$stadsdee00 == "Zuidoost"))
+  Adam.West <- subset(Adam, (Adam$stadsdee00 == "West"))
+  Adam.Westpoort <- subset(Adam, (Adam$stadsdee00 == "Westpoort"))
+  Adam.Nieuw_West <- subset(Adam, (Adam$stadsdee00 == "Nieuw-West"))
+  # What is the average efficiency of the whole week?
+  Efficiency <- mean(Adam$kWh_per_mi)
+  # How many sessions are above average on Saturday an the other days?
+  Sessions.Centrum <- subset(Adam.Centrum, Adam.Centrum$kWh_per_mi >= Efficiency)
+  Sessions.Noord <- subset(Adam.Noord, Adam.Noord$kWh_per_mi >= Efficiency)
+  Sessions.Oost <- subset(Adam.Oost, Adam.Oost$kWh_per_mi >= Efficiency)
+  Sessions.Zuid <- subset(Adam.Zuid, Adam.Zuid$kWh_per_mi >= Efficiency)
+  Sessions.Zuidoost <- subset(Adam.Zuidoost, Adam.Zuidoost$kWh_per_mi >= Efficiency)
+  Sessions.West <- subset(Adam.West, Adam.West$kWh_per_mi >= Efficiency)
+  Sessions.Westpoort <- subset(Adam.Westpoort, Adam.Westpoort$kWh_per_mi >= Efficiency)
+  Sessions.Nieuw_West <- subset(Adam.Nieuw_West, Adam.Nieuw_West$kWh_per_mi >= Efficiency)
+  Count.Centrum <- nrow(Sessions.Centrum)
+  Count.Noord <- nrow(Sessions.Noord)
+  Count.Oost <- nrow(Sessions.Oost)
+  Count.Zuid <- nrow(Sessions.Zuid)
+  Count.Zuidoost <- nrow(Sessions.Zuidoost)
+  Count.West <- nrow(Sessions.West)
+  Count.Westpoort <- nrow(Sessions.Westpoort)
+  Count.Nieuw_West <- nrow(Sessions.Nieuw_West)
+  Answers <- c(Count.Centrum, Count.Noord, Count.Oost, Count.Zuid, Count.Zuidoost, Count.West, Count.Westpoort, Count.Nieuw_West)
+  return(Answers)
+}
+
+NieuwWest.check <- lapply(AdamList2, NieuwWest)
+NieuwWest.check 
+
+#-------------------------------------------------------------------------------------------  
+# Observation: In the city center, more sessions occur than in other city areas. (GIS)
+
+#------------------------------------------------------------------------------------------- 
+
+N_cityCenter <- function(x){
+  Adam <- x
+  Adam.Centrum <- subset(Adam, (Adam$stadsdee00 == "Centrum")) 
+  # Subset districts
+  Adam.Centrum <- subset(Adam, (Adam$stadsdee00 == "Centrum")) 
+  Adam.Noord <- subset(Adam, (Adam$stadsdee00 == "Noord"))
+  Adam.Oost <- subset(Adam, (Adam$stadsdee00 == "Oost"))
+  Adam.Zuid <- subset(Adam, (Adam$stadsdee00 == "ZUid"))
+  Adam.Zuidoost <- subset(Adam, (Adam$stadsdee00 == "Zuidoost"))
+  Adam.West <- subset(Adam, (Adam$stadsdee00 == "West"))
+  Adam.Westpoort <- subset(Adam, (Adam$stadsdee00 == "Westpoort"))
+  Adam.Nieuw_West <- subset(Adam, (Adam$stadsdee00 == "Nieuw-West"))
+  # # What is the average efficiency of the whole week?
+  # Efficiency <- mean(Adam$kWh_per_mi)
+  # # How many sessions are above average on Saturday an the other days?
+  # Sessions.Centrum <- subset(Adam.Centrum, Adam.Centrum$kWh_per_mi >= Efficiency)
+  # Sessions.Noord <- subset(Adam.Noord, Adam.Noord$kWh_per_mi >= Efficiency)
+  # Sessions.Oost <- subset(Adam.Oost, Adam.Oost$kWh_per_mi >= Efficiency)
+  # Sessions.Zuid <- subset(Adam.Zuid, Adam.Zuid$kWh_per_mi >= Efficiency)
+  # Sessions.Zuidoost <- subset(Adam.Zuidoost, Adam.Zuidoost$kWh_per_mi >= Efficiency)
+  # Sessions.West <- subset(Adam.West, Adam.West$kWh_per_mi >= Efficiency)
+  # Sessions.Westpoort <- subset(Adam.Westpoort, Adam.Westpoort$kWh_per_mi >= Efficiency)
+  # Sessions.Nieuw_West <- subset(Adam.Nieuw_West, Adam.Nieuw_West$kWh_per_mi >= Efficiency)
+  Count.Centrum <- nrow(Adam.Centrum)
+  Count.Noord <- nrow(Adam.Noord)
+  Count.Oost <- nrow(Adam.Oost)
+  Count.Zuid <- nrow(Adam.Zuid)
+  Count.Zuidoost <- nrow(Adam.Zuidoost)
+  Count.West <- nrow(Adam.West)
+  Count.Westpoort <- nrow(Adam.Westpoort)
+  Count.Nieuw_West <- nrow(Adam.Nieuw_West)
+  Answers <- c(Count.Centrum, Count.Noord, Count.Oost, Count.Zuid, Count.Zuidoost, Count.West, Count.Westpoort, Count.Nieuw_West)
+  return(Answers)
+}
+
+N_cityCenter.check <- lapply(AdamList2, N_cityCenter)
+N_cityCenter.check 
