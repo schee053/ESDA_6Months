@@ -348,7 +348,7 @@ NieuwWest <- function(x){
   Adam.Centrum <- subset(Adam, (Adam$stadsdee00 == "Centrum")) 
   Adam.Noord <- subset(Adam, (Adam$stadsdee00 == "Noord"))
   Adam.Oost <- subset(Adam, (Adam$stadsdee00 == "Oost"))
-  Adam.Zuid <- subset(Adam, (Adam$stadsdee00 == "ZUid"))
+  Adam.Zuid <- subset(Adam, (Adam$stadsdee00 == "Zuid"))
   Adam.Zuidoost <- subset(Adam, (Adam$stadsdee00 == "Zuidoost"))
   Adam.West <- subset(Adam, (Adam$stadsdee00 == "West"))
   Adam.Westpoort <- subset(Adam, (Adam$stadsdee00 == "Westpoort"))
@@ -356,14 +356,14 @@ NieuwWest <- function(x){
   # What is the average efficiency of the whole week?
   Efficiency <- mean(Adam$kWh_per_mi)
   # How many sessions are above average on Saturday an the other days?
-  Sessions.Centrum <- subset(Adam.Centrum, Adam.Centrum$kWh_per_mi >= Efficiency)
-  Sessions.Noord <- subset(Adam.Noord, Adam.Noord$kWh_per_mi >= Efficiency)
-  Sessions.Oost <- subset(Adam.Oost, Adam.Oost$kWh_per_mi >= Efficiency)
-  Sessions.Zuid <- subset(Adam.Zuid, Adam.Zuid$kWh_per_mi >= Efficiency)
-  Sessions.Zuidoost <- subset(Adam.Zuidoost, Adam.Zuidoost$kWh_per_mi >= Efficiency)
-  Sessions.West <- subset(Adam.West, Adam.West$kWh_per_mi >= Efficiency)
-  Sessions.Westpoort <- subset(Adam.Westpoort, Adam.Westpoort$kWh_per_mi >= Efficiency)
-  Sessions.Nieuw_West <- subset(Adam.Nieuw_West, Adam.Nieuw_West$kWh_per_mi >= Efficiency)
+  Sessions.Centrum <- subset(Adam.Centrum, Adam.Centrum$kWh_per_mi > Efficiency)
+  Sessions.Noord <- subset(Adam.Noord, Adam.Noord$kWh_per_mi > Efficiency)
+  Sessions.Oost <- subset(Adam.Oost, Adam.Oost$kWh_per_mi > Efficiency)
+  Sessions.Zuid <- subset(Adam.Zuid, Adam.Zuid$kWh_per_mi > Efficiency)
+  Sessions.Zuidoost <- subset(Adam.Zuidoost, Adam.Zuidoost$kWh_per_mi > Efficiency)
+  Sessions.West <- subset(Adam.West, Adam.West$kWh_per_mi > Efficiency)
+  Sessions.Westpoort <- subset(Adam.Westpoort, Adam.Westpoort$kWh_per_mi > Efficiency)
+  Sessions.Nieuw_West <- subset(Adam.Nieuw_West, Adam.Nieuw_West$kWh_per_mi > Efficiency)
   Count.Centrum <- nrow(Sessions.Centrum)
   Count.Noord <- nrow(Sessions.Noord)
   Count.Oost <- nrow(Sessions.Oost)
@@ -380,22 +380,163 @@ NieuwWest.check <- lapply(AdamList2, NieuwWest)
 NieuwWest.check 
 
 #-------------------------------------------------------------------------------------------  
-# Observation: In the city center, more sessions occur than in other city areas. (GIS)
-
+# Observation: The most efficient sessions are in Nieuw-West.
 #------------------------------------------------------------------------------------------- 
 
-N_cityCenter <- function(x){
+Efficiency <- function(x){
   Adam <- x
-  Adam.Centrum <- subset(Adam, (Adam$stadsdee00 == "Centrum")) 
   # Subset districts
   Adam.Centrum <- subset(Adam, (Adam$stadsdee00 == "Centrum")) 
   Adam.Noord <- subset(Adam, (Adam$stadsdee00 == "Noord"))
   Adam.Oost <- subset(Adam, (Adam$stadsdee00 == "Oost"))
-  Adam.Zuid <- subset(Adam, (Adam$stadsdee00 == "ZUid"))
+  Adam.Zuid <- subset(Adam, (Adam$stadsdee00 == "Zuid"))
   Adam.Zuidoost <- subset(Adam, (Adam$stadsdee00 == "Zuidoost"))
   Adam.West <- subset(Adam, (Adam$stadsdee00 == "West"))
   Adam.Westpoort <- subset(Adam, (Adam$stadsdee00 == "Westpoort"))
   Adam.Nieuw_West <- subset(Adam, (Adam$stadsdee00 == "Nieuw-West"))
+  # What is the average efficiency per city district?
+  Efficiency <- mean(Adam$kWh_per_mi)
+  Efficiency.Centrum <- mean(Adam.Centrum$kWh_per_mi)
+  Efficiency.Noord <- mean(Adam.Noord$kWh_per_mi)
+  Efficiency.Oost <- mean(Adam.Oost$kWh_per_mi)
+  Efficiency.Zuid <- mean(Adam.Zuid$kWh_per_mi)
+  Efficiency.Zuidoost <- mean(Adam.Zuidoost$kWh_per_mi)
+  Efficiency.West <- mean(Adam.West$kWh_per_mi)
+  Efficiency.Westpoort <- mean(Adam.Westpoort$kWh_per_mi)
+  Efficiency.Nieuw_West <- mean(Adam.Nieuw_West$kWh_per_mi)
+  # How many sessions are above average on Saturday an the other days?
+  Diff.Centrum <- round((Efficiency.Centrum - Efficiency), digits = 4)
+  Diff.Noord <- round((Efficiency.Noord - Efficiency), digits = 4)
+  Diff.Oost <-  round((Efficiency.Oost - Efficiency), digits = 4)
+  Diff.Zuid <- round((Efficiency.Zuid - Efficiency), digits = 4)
+  Diff.Zuidoost <- round((Efficiency.Zuidoost - Efficiency), digits = 4)
+  Diff.West <-  round((Efficiency.West - Efficiency), digits = 4)
+  Diff.Westpoort <-  round((Efficiency.Westpoort - Efficiency), digits = 4)
+  Diff.Nieuw_West <-  round((Efficiency.Nieuw_West - Efficiency), digits = 4)
+  Answers <- c(Diff.Centrum, Diff.Noord, Diff.Oost, Diff.Zuid, Diff.Zuidoost, Diff.West, Diff.Westpoort, Diff.Nieuw_West)
+  return(Answers)
+}
+
+Efficiency.check <- lapply(AdamList2, Efficiency)
+Efficiency.check 
+
+  Adam <- January2013_location
+  # Subset districts
+  Adam.Centrum <- subset(Adam, (Adam$stadsdee00 == "Centrum")) 
+  Adam.Noord <- subset(Adam, (Adam$stadsdee00 == "Noord"))
+  Adam.Oost <- subset(Adam, (Adam$stadsdee00 == "Oost"))
+  Adam.Zuid <- subset(Adam, (Adam$stadsdee00 == "Zuid"))
+  Adam.Zuidoost <- subset(Adam, (Adam$stadsdee00 == "Zuidoost"))
+  Adam.West <- subset(Adam, (Adam$stadsdee00 == "West"))
+  Adam.Westpoort <- subset(Adam, (Adam$stadsdee00 == "Westpoort"))
+  Adam.Nieuw_West <- subset(Adam, (Adam$stadsdee00 == "Nieuw-West"))
+  # What is the average efficiency per city district?
+  Efficiency <- mean(Adam$kWh_per_mi)
+  Efficiency.Centrum <- mean(Adam.Centrum$kWh_per_mi)
+  Efficiency.Noord <- mean(Adam.Noord$kWh_per_mi)
+  Efficiency.Oost <- mean(Adam.Oost$kWh_per_mi)
+  Efficiency.Zuid <- mean(Adam.Zuid$kWh_per_mi)
+  Efficiency.Zuidoost <- mean(Adam.Zuidoost$kWh_per_mi)
+  Efficiency.West <- mean(Adam.West$kWh_per_mi)
+  Efficiency.Westpoort <- mean(Adam.Westpoort$kWh_per_mi)
+  Efficiency.Nieuw_West <- mean(Adam.Nieuw_West$kWh_per_mi)
+  Sessions.Zuid <- subset(Adam.Zuid, Adam.Zuid$kWh_per_mi > Efficiency)
+  # How many sessions are above average on Saturday an the other days?
+  Diff.Centrum <- round((Efficiency.Centrum - Efficiency), digits = 4)
+  Diff.Noord <- round((Efficiency.Noord - Efficiency), digits = 4)
+  Diff.Oost <-  round((Efficiency.Oost - Efficiency), digits = 4)
+  Diff.Zuid <- round((Efficiency.Zuid - Efficiency), digits = 4)
+  Diff.Zuidoost <- round((Efficiency.Zuidoost - Efficiency), digits = 4)
+  Diff.West <-  round((Efficiency.West - Efficiency), digits = 4)
+  Diff.Westpoort <-  round((Efficiency.Westpoort - Efficiency), digits = 4)
+  Diff.Nieuw_West <-  round((Efficiency.Nieuw_West - Efficiency), digits = 4)
+
+Efficiency
+Efficiency.Zuid
+Efficiency.Oost  
+View(Sessions.Zuid)
+#-------------------------------------------------------------------------------------------  
+# Percentage of more efficient sessions 
+#------------------------------------------------------------------------------------------- 
+
+Perc_efficient <- function(x){
+  Adam <- x
+  # Subset districts
+  Adam.Centrum <- subset(Adam, (Adam$stadsdee00 == "Centrum")) 
+  Adam.Noord <- subset(Adam, (Adam$stadsdee00 == "Noord"))
+  Adam.Oost <- subset(Adam, (Adam$stadsdee00 == "Oost"))
+  Adam.Zuid <- subset(Adam, (Adam$stadsdee00 == "Zuid"))
+  Adam.Zuidoost <- subset(Adam, (Adam$stadsdee00 == "Zuidoost"))
+  Adam.West <- subset(Adam, (Adam$stadsdee00 == "West"))
+  Adam.Westpoort <- subset(Adam, (Adam$stadsdee00 == "Westpoort"))
+  Adam.Nieuw_West <- subset(Adam, (Adam$stadsdee00 == "Nieuw-West"))
+  # Number of sesions per district
+  Count.Centrum <- nrow(Adam.Centrum)
+  Count.Noord <- nrow(Adam.Noord)
+  Count.Oost <- nrow(Adam.Oost)
+  Count.Zuid <- nrow(Adam.Zuid)
+  Count.Zuidoost <- nrow(Adam.Zuidoost)
+  Count.West <- nrow(Adam.West)
+  Count.Westpoort <- nrow(Adam.Westpoort)
+  Count.Nieuw_West <- nrow(Adam.Nieuw_West)
+  # What is the average efficiency of the whole week?
+  Efficiency <- mean(Adam$kWh_per_mi)
+  # How many sessions are above average on Saturday an the other days?
+  Sessions.Centrum <- subset(Adam.Centrum, Adam.Centrum$kWh_per_mi > Efficiency)
+  Sessions.Noord <- subset(Adam.Noord, Adam.Noord$kWh_per_mi > Efficiency)
+  Sessions.Oost <- subset(Adam.Oost, Adam.Oost$kWh_per_mi > Efficiency)
+  Sessions.Zuid <- subset(Adam.Zuid, Adam.Zuid$kWh_per_mi > Efficiency)
+  Sessions.Zuidoost <- subset(Adam.Zuidoost, Adam.Zuidoost$kWh_per_mi > Efficiency)
+  Sessions.West <- subset(Adam.West, Adam.West$kWh_per_mi > Efficiency)
+  Sessions.Westpoort <- subset(Adam.Westpoort, Adam.Westpoort$kWh_per_mi > Efficiency)
+  Sessions.Nieuw_West <- subset(Adam.Nieuw_West, Adam.Nieuw_West$kWh_per_mi > Efficiency)
+  Count2.Centrum <- nrow(Sessions.Centrum)
+  Count2.Noord <- nrow(Sessions.Noord)
+  Count2.Oost <- nrow(Sessions.Oost)
+  Count2.Zuid <- nrow(Sessions.Zuid)
+  Count2.Zuidoost <- nrow(Sessions.Zuidoost)
+  Count2.West <- nrow(Sessions.West)
+  Count2.Westpoort <- nrow(Sessions.Westpoort)
+  Count2.Nieuw_West <- nrow(Sessions.Nieuw_West)
+  # What percentage of sessions is more efficient?
+  perc.Centrum <- round(((100*Count2.Centrum)/Count.Centrum), digits = 1)
+  perc.Noord <-  round(((100*Count2.Noord)/Count.Noord), digits = 1)
+  perc.Oost <-  round(((100*Count2.Oost)/Count.Oost), digits = 1)
+  perc.Zuid <-  round(((100*Count2.Zuid)/Count.Zuid), digits = 1)
+  perc.Zuidoost <-  round(((100*Count2.Zuidoost)/Count.Zuidoost), digits = 1)
+  perc.West <-  round(((100*Count2.West)/Count.West), digits = 1)
+  perc.Westpoort <-  round(((100*Count2.Westpoort)/Count.Westpoort), digits = 1)
+  perc.Nieuw_West <-  round(((100*Count2.Nieuw_West)/Count.Nieuw_West), digits = 1)
+  Answers <- c(perc.Centrum,  perc.Noord, perc.Oost, perc.Zuid, perc.Zuidoost, perc.West, perc.Westpoort, perc.Nieuw_West)
+  return(Answers)
+}
+
+Perc.eff.check <- lapply(AdamList2, Perc_efficient)
+Perc.eff.check
+
+#-------------------------------------------------------------------------------------------  
+# Number of sessions per district
+#------------------------------------------------------------------------------------------- 
+N_cityCenter <- function(x){ 
+  Adam <- x
+  # Subset districts
+  Adam.Centrum <- subset(Adam, (Adam$stadsdee00 == "Centrum")) 
+  Adam.Noord <- subset(Adam, (Adam$stadsdee00 == "Noord"))
+  Adam.Oost <- subset(Adam, (Adam$stadsdee00 == "Oost"))
+  Adam.Zuid <- subset(Adam, (Adam$stadsdee00 == "Zuid"))
+  Adam.Zuidoost <- subset(Adam, (Adam$stadsdee00 == "Zuidoost"))
+  Adam.West <- subset(Adam, (Adam$stadsdee00 == "West"))
+  Adam.Westpoort <- subset(Adam, (Adam$stadsdee00 == "Westpoort"))
+  Adam.Nieuw_West <- subset(Adam, (Adam$stadsdee00 == "Nieuw-West"))
+  # Number of sesions per district
+  Count.Centrum <- nrow(Adam.Centrum)
+  Count.Noord <- nrow(Adam.Noord)
+  Count.Oost <- nrow(Adam.Oost)
+  Count.Zuid <- nrow(Adam.Zuid)
+  Count.Zuidoost <- nrow(Adam.Zuidoost)
+  Count.West <- nrow(Adam.West)
+  Count.Westpoort <- nrow(Adam.Westpoort)
+  Count.Nieuw_West <- nrow(Adam.Nieuw_West)
   # # What is the average efficiency of the whole week?
   # Efficiency <- mean(Adam$kWh_per_mi)
   # # How many sessions are above average on Saturday an the other days?
@@ -421,3 +562,4 @@ N_cityCenter <- function(x){
 
 N_cityCenter.check <- lapply(AdamList2, N_cityCenter)
 N_cityCenter.check 
+
